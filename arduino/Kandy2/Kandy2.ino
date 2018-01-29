@@ -225,16 +225,12 @@ void fill(const struct CRGB & color) {
   }
 }
 
-void write_stopwatch_start_time(time_t start_time);
+void write_stopwatch_start_time(uint32_t start_time);
 void interact();
 void setup() {
   Serial.begin(115200);
   while(!Serial){
     delay(100);
-  }
-  for(int ii=0; ii<0; ii++){
-    Serial.print(ii);
-    Serial.println(" Kandy2...");
   }
   Serial1.begin(57600);
   FastLED.addLeds<APA102, SCK, MOSI, BGR, DATA_RATE_MHZ(25)>(leds, N_PIXEL);
@@ -273,8 +269,6 @@ void setup() {
     }
   }
   else{
-    //Serial.println("RCT ok");
-    //Serial.println(rtc.now().year());
   }
   now = rtc.now();
   /* // rainbow test
@@ -289,7 +283,6 @@ void setup() {
   if(racing){
     mode = RACE_MODE;
   }
-  //Serial.println("here one?");
 #ifdef NOTDEF  // ## test small font
   // test 4x8 font
   for(int i=0; i<11; i++){
@@ -309,7 +302,6 @@ void setup() {
     rtc_raw_write(DS3231_ALARM2_OFFSET + 1, 1, false, ((uint8_t*)&n_wave)); // n waves?
     rtc_raw_write(DS3231_ALARM2_OFFSET + 2, 2, false, ((uint8_t*)&wave_sep)); // wave separation?
   */
-  //Serial.println("leaving setup()");
 }
 
 void littleDigit(byte d, const struct CRGB & color){
@@ -835,7 +827,7 @@ uint8_t dec2bcd(int dec){
   return (t << 4) + o;
 }
 
-void write_stopwatch_start_time(time_t start_time){
+void write_stopwatch_start_time(uint32_t start_time){
   uint8_t *time_bytes_p;
   
   /*
@@ -853,9 +845,9 @@ void write_stopwatch_start_time(time_t start_time){
   //rtc_raw_write(DS3231_ALARM2_OFFSET + 4, 2, false, ((uint8_t*)&countdown));
 }
 
-time_t read_stopwatch_start_time(){
+uint32_t read_stopwatch_start_time(){
   uint8_t *time_bytes_p;
-  time_t out;
+  uint32_t out;
   uint16_t countdown;
   
   /*
