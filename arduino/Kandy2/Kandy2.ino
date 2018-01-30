@@ -229,10 +229,9 @@ void write_stopwatch_start_time(uint32_t start_time);
 void interact();
 void setup() {
   Serial.begin(115200);
-  while(!Serial){
-    delay(100);
-  }
-  Serial1.begin(57600);
+  delay(100);
+
+  Serial1.begin57600);
   FastLED.addLeds<APA102, SCK, MOSI, BGR, DATA_RATE_MHZ(25)>(leds, N_PIXEL);
   FastLED.setMaxPowerInVoltsAndMilliamps(5, 20000);
 
