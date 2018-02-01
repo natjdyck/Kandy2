@@ -7,6 +7,27 @@
 #include "RTClib.h"
 #include "kandy_commands.h"
 
+// colors --> Red Yellow Green Aqua Blue Purple
+#define todColor Aqua // Time of day clock
+
+#define cdSetColor Yellow // Set countdown
+
+#define cdStartColor Yellow // Countdown wave 1 includes second 0 at the start
+#define cdWavesColor Yellow // Countdown wave > 1 does not include second 0 at the start
+
+#define rcOffColor Red // Race clock not started dashes and colens
+#define rcColor Green // Race clock and countdown until red block countdown
+#define rcStartColor Black // Race clock during flashing green wave start --> set to black for no numbers  includes second 0 at the start of each wave
+
+#define waveSepSetColor Yellow // Set wave separation seconds
+#define waveSetColor Purple // Set wave
+
+// durations (seconds) of wave start block animations
+#define goTime 5 // flashing green start --> 9 max (if numbers do not display, check color above)
+#define waitTime 9 // red countdown wave 1 start --> 9 max
+#define waitWaveTime 9 // red countdown wave > 1 start --> 9 max
+
+
 RTC_DS3231 rtc;
 const bool USE_12_HOUR_FORMAT = true;
 const int DS3231_ADDR = 104;
@@ -75,7 +96,7 @@ const uint8_t CLOCK_MODE = 1;
 const uint8_t STANDBY_MODE = 2;
 const uint8_t RACE_MODE = 3;
 const uint8_t WAVE_MODE = 4;
-const uint16_t MIN_WAVE_SEP = 30;
+const uint16_t MIN_WAVE_SEP = 10;
 
 DateTime now;
 uint32_t stopwatch_start_time = 0;
@@ -414,7 +435,7 @@ void displayTime(uint8_t hh, uint8_t mm, uint8_t ss, const struct CRGB & color, 
   bigDigit(27 + 1, mm % 10, color);
   bigDigit(37 + 2, ss / 10, color);
   bigDigit(46 + 2, ss % 10, color);
-  if(colen){
+  if(colen){ // blinking colens
     draw_colens(color);
   }
 }
@@ -482,10 +503,10 @@ void updateDisplay(){
     race_hh = countdown_duration.hours();
     race_mm = countdown_duration.minutes();
     race_ss = countdown_duration.seconds();
-    displayTime(race_hh % 100, race_mm, race_ss, CRGB::Yellow, true);
+    displayTime(race_hh % 100, race_mm, race_ss, CRGB::cdSetColor, true);
     for(int row=0; row < 16; row++){
       for(int col=0; col < 8; col++){
-	setPixel(row, col, CRGB::Black);
+	      setPixel(row, col, CRGB::Black);
       }
     }
   }
@@ -497,69 +518,98 @@ void updateDisplay(){
       race_ss = race_time.seconds();
       race_seconds = race_hh * HOUR + race_mm * MINUTE + race_ss * SECOND;
 
-      displayTime(race_hh % 100, race_mm, race_ss, CRGB::White, race_ss % 2);
+      //displayTime(race_hh % 100, race_mm, race_ss, CRGB::rcColor, race_ss % 2);
+
+// trying out dif countdown color
+      
+if(0 > race_seconds){
+  displayTime(race_hh % 100, race_mm, race_ss, CRGB::cdWavesColor, race_ss % 2);
+}
+else{
+  displayTime(race_hh % 100, race_mm, race_ss, CRGB::rcColor, race_ss % 2);
+}
+
+
+       
       if(pending_start){
-	if(0 <= race_seconds && race_seconds < 10){
-	  //if(race_hh == 0 && race_mm == 0 && race_ss < 10){
-	  if(race_ss > 0){
-	    fill(CRGB::Red);
-	  }
-	  else{
-	    fill(CRGB::Green);
-	  }
-	  for(int col=0; col<10; col++){
-	    for(int row=0; row<16; row++){
-	      setPixel(row, col+23, CRGB::Black);
-	    }
-	  }
-	  bigDigit(24, race_ss, CRGB::White);
-	}
+
+        // if this is used, it starts green blocks at 0 seconds, but 0 is cdColor
+      	if(0 <= race_seconds && race_seconds < waitTime + 1){
+        
+        // if this is used, it flashes to 00:00:00 in rcColor
+        //if(0 < race_seconds && race_seconds < waitTime + 1){
+      	  
+      	  //if(race_hh == 0 && race_mm == 0 && race_ss < 10){
+      	  if(race_ss > 0){
+      	    fill(CRGB::Red);
+          }
+          else{
+            fill(CRGB::Green);
+        	}
+      	  for(int col=0; col<10; col++){
+      	    for(int row=0; row<16; row++){
+      	      setPixel(row, col+23, CRGB::Black);
+      	    }
+      	  }
+      	  bigDigit(24, race_ss, CRGB::cdStartColor);
+    	  
+    	  }
+       
       }
       else{
-	for(uint8_t i = 0; i < n_wave; i++){
-	  // see if we are about to start a new wave
-	  int wave_seconds = race_seconds - i * wave_sep;
-	  if(-10 <  wave_seconds && wave_seconds < 0){
-	    if(race_ss > 0){
-	      fill(CRGB::Red);
-	    }
-	    else{
-	      fill(CRGB::Green);
-	    }
-	    for(int col=0; col<10; col++){
-	      for(int row=0; row<16; row++){
-		setPixel(row, col+23, CRGB::Black);
-	      }
-	    }
-	    bigDigit(24, abs(wave_seconds), CRGB::White);
-	  }
-
-
-	  // see if a new wave just started
-	  if(0 <= race_seconds - i * wave_sep && race_seconds - i * wave_sep < 10){
-	    fill(CRGB::Black);
-	    for(int col=0; col<20; col++){
-	      for(int row=0; row<16; row++){
-		setPixel(row, col+(race_ss%2) * 36, CRGB::Green);
-	      }
-	    }
-	    bigDigit(24, race_seconds - i * wave_sep, CRGB::White);
-	  }
-	}
+      	
+      	for(uint8_t i = 0; i < n_wave; i++){
+      	  // see if we are about to start a new wave
+      	  int wave_seconds = race_seconds - i * wave_sep;
+      	  
+      	  if(-(waitWaveTime + 1) <  wave_seconds && wave_seconds < 0){
+      	    
+      	    if(race_ss > 0){
+      	      fill(CRGB::Red);
+      	    }
+      	    else{
+      	      fill(CRGB::Green);
+      	    }
+      	    
+      	    for(int col=0; col<10; col++){
+      	      for(int row=0; row<16; row++){
+      		      setPixel(row, col+23, CRGB::Black);
+      	      }
+      	    }
+           
+      	    bigDigit(24, abs(wave_seconds), CRGB::cdWavesColor);
+      	  
+      	  }
+      
+      	  // see if a new wave just started
+      	  if(0 <= race_seconds - i * wave_sep && race_seconds - i * wave_sep < goTime + 1){
+      	    
+      	    fill(CRGB::Black);
+      	    for(int col=0; col<20; col++){
+      	      for(int row=0; row<16; row++){
+      		      setPixel(row, col+(race_ss%2) * 36, CRGB::Green);
+      	      }
+      	    }
+            
+            // displays seconds digits with green start blocks, unless rcStartColor is Black
+      	    bigDigit(24, race_seconds - i * wave_sep, CRGB::rcStartColor);
+      	  
+      	  }
+      	}
       }
     }
     else{ // put dashes
-      draw_dashes(CRGB::White);
-      draw_colens(CRGB::White);
+      draw_dashes(CRGB::rcOffColor);
+      draw_colens(CRGB::rcOffColor);
     }
   }
   else if (mode == CLOCK_MODE){
-    displayTime(hh % 100, mm, ss, CRGB::White, true);
+    displayTime(hh % 100, mm, ss, CRGB::todColor, true);
   }
   else if (mode == WAVE_MODE){
-    bigDigits(0, n_wave, 2, CRGB::Purple);
+    bigDigits(0, n_wave, 2, CRGB::waveSetColor);
     if(n_wave > 1){
-      bigDigits(56 - 4 * 9, wave_sep % 10000, 4, CRGB::SeaGreen);
+      bigDigits(56 - 4 * 9, wave_sep % 10000, 4, CRGB::waveSepSetColor);
     }
   }
   //displayTime(0, 0, count%10, CRGB::Green, true);  FastLED.show();  return;
@@ -776,14 +826,14 @@ void do_command(uint8_t command){
   case KANDY_INC_WAVE_SEP:
     if(mode == WAVE_MODE){
       if(wave_sep < MAX_WAVE_SEP){
-	wave_sep+=10;
+	wave_sep+=5;
       }
     }
     break;
   case KANDY_DEC_WAVE_SEP:
     if(mode == WAVE_MODE){
       if(wave_sep > MIN_WAVE_SEP){
-	wave_sep-=10;
+	wave_sep-=5;
       }
     }
     break;
