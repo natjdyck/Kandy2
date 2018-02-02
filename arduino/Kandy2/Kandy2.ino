@@ -8,24 +8,43 @@
 #include "kandy_commands.h"
 
 // colors --> Red Yellow Green Aqua Blue Purple
-#define todColor Aqua // Time of day clock
+// Time of day clock
+#define TOD_COLOR CRGB::Aqua 
 
-#define cdSetColor Yellow // Set countdown
+// Set countdown
+#define CD_SET_COLOR CRGB::Yellow
 
-#define cdStartColor Yellow // Countdown wave 1 includes second 0 at the start
-#define cdWavesColor Yellow // Countdown wave > 1 does not include second 0 at the start
+// Countdown wave 1 includes second 0 at the start
+#define CD_START_COLOR CRGB::Yellow
 
-#define rcOffColor Red // Race clock not started dashes and colens
-#define rcColor Green // Race clock and countdown until red block countdown
-#define rcStartColor Black // Race clock during flashing green wave start --> set to black for no numbers  includes second 0 at the start of each wave
+// Countdown wave > 1 does not include second 0 at the start
+#define CD_WAVES_COLOR CRGB::Yellow 
 
-#define waveSepSetColor Yellow // Set wave separation seconds
-#define waveSetColor Purple // Set wave
+// Race clock not started dashes and colens
+#define RC_OFF_COLOR CRGB::Red 
+
+// Race clock and countdown until red block countdown
+#define RC_COLOR CRGB::Green 
+
+// Race clock during flashing green wave start --> set to black for no numbers  includes second 0 at the start of each wave
+#define RC_START_COLOR CRGB::Green
+
+// Set wave separation seconds
+#define WAVE_SEP_SET_COLOR CRGB::Yellow
+
+// Set wave
+#define WAVE_SET_COLOR CRGB::Purple
 
 // durations (seconds) of wave start block animations
-#define goTime 5 // flashing green start --> 9 max (if numbers do not display, check color above)
-#define waitTime 9 // red countdown wave 1 start --> 9 max
-#define waitWaveTime 9 // red countdown wave > 1 start --> 9 max
+
+// flashing green start --> 9 max (if numbers do not display, check color above)
+#define GO_TIME 5
+
+// red countdown wave 1 start --> 9 max
+#define WAIT_TIME 9
+
+// red countdown wave > 1 start --> 9 max
+#define WAIT_WAVE_TIME 9
 
 
 RTC_DS3231 rtc;
@@ -503,7 +522,7 @@ void updateDisplay(){
     race_hh = countdown_duration.hours();
     race_mm = countdown_duration.minutes();
     race_ss = countdown_duration.seconds();
-    displayTime(race_hh % 100, race_mm, race_ss, CRGB::cdSetColor, true);
+    displayTime(race_hh % 100, race_mm, race_ss, CD_SET_COLOR, true);
     for(int row=0; row < 16; row++){
       for(int col=0; col < 8; col++){
 	      setPixel(row, col, CRGB::Black);
@@ -519,22 +538,18 @@ void updateDisplay(){
       race_seconds = race_hh * HOUR + race_mm * MINUTE + race_ss * SECOND;
 
       //displayTime(race_hh % 100, race_mm, race_ss, CRGB::rcColor, race_ss % 2);
-
-// trying out dif countdown color
+      // countdwon color if before race start, race clock color after
+      if(now.unixtime() > stopwatch_start_time){
+        displayTime(race_hh % 100, race_mm, race_ss, RC_COLOR, race_ss % 2);
+      }
+      else{
+        displayTime(race_hh % 100, race_mm, race_ss, CD_WAVES_COLOR, race_ss % 2);
+      }
       
-if(0 > race_seconds){
-  displayTime(race_hh % 100, race_mm, race_ss, CRGB::cdWavesColor, race_ss % 2);
-}
-else{
-  displayTime(race_hh % 100, race_mm, race_ss, CRGB::rcColor, race_ss % 2);
-}
-
-
-       
       if(pending_start){
 
         // if this is used, it starts green blocks at 0 seconds, but 0 is cdColor
-      	if(0 <= race_seconds && race_seconds < waitTime + 1){
+      	if(0 <= race_seconds && race_seconds < WAIT_TIME + 1){
         
         // if this is used, it flashes to 00:00:00 in rcColor
         //if(0 < race_seconds && race_seconds < waitTime + 1){
@@ -551,7 +566,7 @@ else{
       	      setPixel(row, col+23, CRGB::Black);
       	    }
       	  }
-      	  bigDigit(24, race_ss, CRGB::cdStartColor);
+      	  bigDigit(24, race_ss, CD_START_COLOR);
     	  
     	  }
        
@@ -562,7 +577,7 @@ else{
       	  // see if we are about to start a new wave
       	  int wave_seconds = race_seconds - i * wave_sep;
       	  
-      	  if(-(waitWaveTime + 1) <  wave_seconds && wave_seconds < 0){
+      	  if(-(WAIT_WAVE_TIME + 1) <  wave_seconds && wave_seconds < 0){
       	    
       	    if(race_ss > 0){
       	      fill(CRGB::Red);
@@ -577,12 +592,12 @@ else{
       	      }
       	    }
            
-      	    bigDigit(24, abs(wave_seconds), CRGB::cdWavesColor);
+      	    bigDigit(24, abs(wave_seconds), CD_WAVES_COLOR);
       	  
       	  }
       
       	  // see if a new wave just started
-      	  if(0 <= race_seconds - i * wave_sep && race_seconds - i * wave_sep < goTime + 1){
+      	  if(0 <= race_seconds - i * wave_sep && race_seconds - i * wave_sep < GO_TIME + 1){
       	    
       	    fill(CRGB::Black);
       	    for(int col=0; col<20; col++){
@@ -592,24 +607,24 @@ else{
       	    }
             
             // displays seconds digits with green start blocks, unless rcStartColor is Black
-      	    bigDigit(24, race_seconds - i * wave_sep, CRGB::rcStartColor);
+      	    bigDigit(24, race_seconds - i * wave_sep, RC_START_COLOR);
       	  
       	  }
       	}
       }
     }
     else{ // put dashes
-      draw_dashes(CRGB::rcOffColor);
-      draw_colens(CRGB::rcOffColor);
+      draw_dashes(RC_OFF_COLOR);
+      draw_colens(RC_OFF_COLOR);
     }
   }
   else if (mode == CLOCK_MODE){
-    displayTime(hh % 100, mm, ss, CRGB::todColor, true);
+    displayTime(hh % 100, mm, ss, TOD_COLOR, true);
   }
   else if (mode == WAVE_MODE){
-    bigDigits(0, n_wave, 2, CRGB::waveSetColor);
+    bigDigits(0, n_wave, 2, WAVE_SET_COLOR);
     if(n_wave > 1){
-      bigDigits(56 - 4 * 9, wave_sep % 10000, 4, CRGB::waveSepSetColor);
+      bigDigits(56 - 4 * 9, wave_sep % 10000, 4, WAVE_SEP_SET_COLOR);
     }
   }
   //displayTime(0, 0, count%10, CRGB::Green, true);  FastLED.show();  return;
