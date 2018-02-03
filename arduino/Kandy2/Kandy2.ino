@@ -41,7 +41,7 @@
 #define GO_TIME 5
 
 // red countdown wave 1 start --> 9 max
-#define WAIT_TIME 9
+#define WAIT_TIME 59
 
 // red countdown wave > 1 start --> 9 max
 #define WAIT_WAVE_TIME 9
@@ -116,6 +116,7 @@ const uint8_t STANDBY_MODE = 2;
 const uint8_t RACE_MODE = 3;
 const uint8_t WAVE_MODE = 4;
 const uint16_t MIN_WAVE_SEP = 10;
+const uint16_t MAX_WAVE_SEP = 86400;
 
 DateTime now;
 uint32_t stopwatch_start_time = 0;
@@ -239,10 +240,10 @@ void displayChar(uint16_t row, uint16_t col, byte ascii, const struct CRGB & col
   for(uint8_t r=0; r<FONT8x16_N_ROW; r++){
     for(uint8_t c=0; c<FONT8x16_N_COL; c++){
       if((data[r] >> (FONT8x16_N_COL - 1 - c)) & 1){
-	setPixel(row + r, col + c, color);
+			setPixel(row + r, col + c, color);
       }
       else{
-	setPixel(row + r, col + c, CRGB::Black);
+			setPixel(row + r, col + c, CRGB::Black);
       }
     }
   }
@@ -288,22 +289,22 @@ void setup() {
     Serial.println("Couldn't find RTC");
     while (1){
       for(int i=0; i<3; i++){
-	digitalWrite(13, HIGH);
-	delay(250);
-	digitalWrite(13, LOW);
-	delay(250);
+			digitalWrite(13, HIGH);
+			delay(250);
+			digitalWrite(13, LOW);
+			delay(250);
       }
       for(int i=0; i<3; i++){
-	digitalWrite(13, HIGH);
-	delay(500);
-	digitalWrite(13, LOW);
-	delay(500);
+			digitalWrite(13, HIGH);
+			delay(500);
+			digitalWrite(13, LOW);
+			delay(500);
       }
       for(int i=0; i<3; i++){
-	digitalWrite(13, HIGH);
-	delay(250);
-	digitalWrite(13, LOW);
-	delay(250);
+			digitalWrite(13, HIGH);
+			delay(250);
+			digitalWrite(13, LOW);
+			delay(250);
       }
     }
   }
@@ -322,6 +323,7 @@ void setup() {
   if(racing){
     mode = RACE_MODE;
   }
+  
 #ifdef NOTDEF  // ## test small font
   // test 4x8 font
   for(int i=0; i<11; i++){
@@ -348,10 +350,10 @@ void littleDigit(byte d, const struct CRGB & color){
   for(col = 0; col < 4; col++){
     for(row = 0; row < 7; row++){
       if((digits4x7[d * 4 + col] >> row) & 1){
-	setPixel(row, col, color);
+			setPixel(row, col, color);
       }
       else{
-	setPixel(row, col, 0);
+			setPixel(row, col, 0);
       }
     }
   }
@@ -389,16 +391,17 @@ void bigDigit(byte start, byte d, const struct CRGB & color){
   if(d < 10){
     for(col = 0; col < 8; col++){
       for(row = 0; row < 16; row++){
-	if((digits8x16[d * 16 + row] >> col) & 1){
-	  setPixel(row, col + start, color);
-	}
-	else{
-	  setPixel(row, col + start, 0);
-	}
+			if((digits8x16[d * 16 + row] >> col) & 1){
+			  setPixel(row, col + start, color);
+			}
+			else{
+			  setPixel(row, col + start, 0);
+			}
       }
     }
   }
 }
+
 void bigDigits(byte start, uint32_t v, const byte n_digit, const struct CRGB & color){
   byte digit;
   
@@ -454,14 +457,13 @@ void displayTime(uint8_t hh, uint8_t mm, uint8_t ss, const struct CRGB & color, 
   bigDigit(27 + 1, mm % 10, color);
   bigDigit(37 + 2, ss / 10, color);
   bigDigit(46 + 2, ss % 10, color);
-  if(colen){ // blinking colens
+  //if(colen){ // blinking colens
     draw_colens(color);
-  }
+  //}
 }
 
 int count = 0;
 char *msg = "2x6 ULTIM8x8 array!!!   ";
-
 
 void display_count(unsigned int v, const struct CRGB & color){
   bigDigit( 0, (int)(v / 1e6) % 10, color);
@@ -473,6 +475,7 @@ void display_count(unsigned int v, const struct CRGB & color){
   bigDigit(48, (int)(v / 1e0) % 10, color);
   FastLED.show();
 }
+
 void loop(){
   count++;
   //display_count(count, CRGB::Red);return;
@@ -548,25 +551,50 @@ void updateDisplay(){
       
       if(pending_start){
 
-        // if this is used, it starts green blocks at 0 seconds, but 0 is cdColor
-      	if(0 <= race_seconds && race_seconds < WAIT_TIME + 1){
-        
-        // if this is used, it flashes to 00:00:00 in rcColor
-        //if(0 < race_seconds && race_seconds < waitTime + 1){
-      	  
+        if(0 <= race_seconds && race_seconds < WAIT_TIME + 1){
+          
       	  //if(race_hh == 0 && race_mm == 0 && race_ss < 10){
       	  if(race_ss > 0){
       	    fill(CRGB::Red);
-          }
-          else{
-            fill(CRGB::Green);
-        	}
-      	  for(int col=0; col<10; col++){
+           }
+           else{
+             fill(CRGB::Green);
+        	  }
+        	  // set black area around digits
+      	  //for(int col=0; col<10; col++){ // 10 columns wide?
+      	  /*
+      	  for(int col=0; col<19; col++){ // 10 columns wide?
       	    for(int row=0; row<16; row++){
-      	      setPixel(row, col+23, CRGB::Black);
+      	      //setPixel(row, col+23, CRGB::Black);
+      	      setPixel(row, col+19, CRGB::Black); // centered at 23 colums
       	    }
       	  }
-      	  bigDigit(24, race_ss, CD_START_COLOR);
+         */
+      	  
+      	  if(race_ss > 9){ // two digit countdown in red block
+      	  		for(int col=0; col<19; col++){ // # of columns wide
+						 for(int row=0; row<16; row++){
+							//setPixel(row, col+23, CRGB::Black);
+							setPixel(row, col+19, CRGB::Black); // start at column #
+						 }
+					  }
+      	    bigDigits(20, race_ss, 2, CD_START_COLOR); 
+      	  }
+      	  else if(race_ss > 0){ // one digit countdown in red block
+      	  		
+      	  		for(int col=0; col<12; col++){ // # of columns wide
+						 for(int row=0; row<16; row++){
+							//setPixel(row, col+23, CRGB::Black);
+							setPixel(row, col+22, CRGB::Black); // start at column #
+						 }
+					  }
+					  
+      	    bigDigit(24, race_ss, CD_START_COLOR); 
+      	  }
+      	  
+           else {
+             bigDigit(24, race_ss, RC_COLOR);
+           }
     	  
     	  }
        
@@ -586,9 +614,9 @@ void updateDisplay(){
       	      fill(CRGB::Green);
       	    }
       	    
-      	    for(int col=0; col<10; col++){
+      	    for(int col=0; col<12; col++){ // # of columns wide
       	      for(int row=0; row<16; row++){
-      		      setPixel(row, col+23, CRGB::Black);
+      		      setPixel(row, col+22, CRGB::Black); // start at column #
       	      }
       	    }
            
@@ -600,9 +628,12 @@ void updateDisplay(){
       	  if(0 <= race_seconds - i * wave_sep && race_seconds - i * wave_sep < GO_TIME + 1){
       	    
       	    fill(CRGB::Black);
-      	    for(int col=0; col<20; col++){
+      	    //for(int col=0; col<20; col++){
+      	    for(int col=0; col<22; col++){
       	      for(int row=0; row<16; row++){
-      		      setPixel(row, col+(race_ss%2) * 36, CRGB::Green);
+      		      //setPixel(row, col+(race_ss%2) * 36, CRGB::Green);
+      		      setPixel(row, col+(race_ss%2) * 34, CRGB::Green);
+      		      //setPixel(row, col+20, CRGB::Green);
       	      }
       	    }
             
@@ -622,9 +653,12 @@ void updateDisplay(){
     displayTime(hh % 100, mm, ss, TOD_COLOR, true);
   }
   else if (mode == WAVE_MODE){
-    bigDigits(0, n_wave, 2, WAVE_SET_COLOR);
+    //bigDigits(0, n_wave, 2, WAVE_SET_COLOR);
+    digits_4x8(5, 4, n_wave, 2, WAVE_SET_COLOR);
     if(n_wave > 1){
-      bigDigits(56 - 4 * 9, wave_sep % 10000, 4, WAVE_SEP_SET_COLOR);
+      // bigDigits(56 - 4 * 9, wave_sep % 10000, 4, WAVE_SEP_SET_COLOR);
+      //digits_4x8(56 - 4 * 9, 0, wave_sep % 10000, 6, WAVE_SEP_SET_COLOR);
+      digits_4x8(22, 4, wave_sep, 6, WAVE_SEP_SET_COLOR);
     }
   }
   //displayTime(0, 0, count%10, CRGB::Green, true);  FastLED.show();  return;
@@ -729,7 +763,7 @@ void do_command(uint8_t command){
   case KANDY_DEC_CD_HOUR:
     if(mode == STANDBY_MODE){
       if(countdown_duration.totalseconds() > 3600){
-	countdown_duration = countdown_duration - HOUR;
+			countdown_duration = countdown_duration - HOUR;
       }
     }
     break;
@@ -741,7 +775,7 @@ void do_command(uint8_t command){
   case KANDY_DEC_CD_MIN:
     if(mode == STANDBY_MODE){
       if(countdown_duration.totalseconds() > 60){
-	countdown_duration = countdown_duration - MINUTE;
+			countdown_duration = countdown_duration - MINUTE;
       }
     }
     break;
@@ -753,7 +787,7 @@ void do_command(uint8_t command){
   case KANDY_DEC_CD_SEC:
     if(mode == STANDBY_MODE){
       if(countdown_duration.totalseconds() > 0){
-	countdown_duration = countdown_duration - SECOND;
+			countdown_duration = countdown_duration - SECOND;
       }
     }
     break;
@@ -772,11 +806,11 @@ void do_command(uint8_t command){
   case KANDY_INC_RACE_HOUR:
     if(mode == RACE_MODE){
       if(stopwatch_start_time > 3600){
-	stopwatch_start_time -= 3600;
+			stopwatch_start_time -= 3600;
       }
       else{
-	fill(CRGB::Red);
-	delay(500);
+			fill(CRGB::Red);
+			delay(500);
       }
     }
     break;
@@ -788,11 +822,11 @@ void do_command(uint8_t command){
   case KANDY_INC_RACE_MIN:
     if(mode == RACE_MODE){
       if(stopwatch_start_time > 60){
-	stopwatch_start_time -= 60;
+			stopwatch_start_time -= 60;
       }
       else{
-	fill(CRGB::Red);
-	delay(500);
+			fill(CRGB::Red);
+			delay(500);
       }
     }
     break;
@@ -804,11 +838,11 @@ void do_command(uint8_t command){
   case KANDY_INC_RACE_SEC:
     if(mode == RACE_MODE){
       if(stopwatch_start_time > 1){
-	stopwatch_start_time -= 1;
+			stopwatch_start_time -= 1;
       }
       else{
-	fill(CRGB::Red);
-	delay(500);
+			fill(CRGB::Red);
+			delay(500);
       }
     }
     break;
@@ -827,29 +861,48 @@ void do_command(uint8_t command){
   case KANDY_INC_N_WAVE:
     if(mode == WAVE_MODE){
       if(n_wave < 99){
-	n_wave++;
+			n_wave++;
       }
     }
     break;
   case KANDY_DEC_N_WAVE:
     if(mode == WAVE_MODE){
       if(n_wave > 1){
-	n_wave--;
+			n_wave--;
       }
     }
     break;
   case KANDY_INC_WAVE_SEP:
     if(mode == WAVE_MODE){
       if(wave_sep < MAX_WAVE_SEP){
-	wave_sep+=5;
+			wave_sep+=5;	
       }
     }
     break;
   case KANDY_DEC_WAVE_SEP:
     if(mode == WAVE_MODE){
       if(wave_sep > MIN_WAVE_SEP){
-	wave_sep-=5;
+			wave_sep-=5;
       }
+    }
+    break;
+  case KANDY_INC_WAVE_SEP_MIN:
+    if(mode == WAVE_MODE){
+      if(wave_sep < MAX_WAVE_SEP){
+			wave_sep+=MINUTE;
+      }
+    }
+    break;
+  case KANDY_DEC_WAVE_SEP_MIN:
+    if(mode == WAVE_MODE){
+      if(wave_sep > MIN_WAVE_SEP){
+			wave_sep-=MINUTE;
+      }
+    }
+    break;
+  case KANDY_RESET_WAVE_SEP:
+    if(mode == WAVE_MODE){
+		wave_sep=MIN_WAVE_SEP; 
     }
     break;
   case KANDY_RACE_STOP:
@@ -948,7 +1001,7 @@ bool rtc_raw_read(uint8_t addr,
     for(uint8_t i = 0; i < n_bytes; i++){
       dest[i] = Wire.read();
       if(is_bcd){ // needs to be converted to dec
-	dest[i] = bcd2dec(dest[i]);
+			dest[i] = bcd2dec(dest[i]);
       }
     }
     out = true;
